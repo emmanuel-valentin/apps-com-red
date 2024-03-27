@@ -32,6 +32,13 @@ public class DirectoryState {
         }
     }
 
+    public static synchronized DirectoryState getInstance(boolean remote) {
+        if (instance == null) {
+            instance = new DirectoryState(remote ? Constants.SERVER_PATH : Constants.CLIENT_PATH);
+        }
+        return instance;
+    }
+
     public static synchronized DirectoryState getInstance() {
         if (instance == null) {
             instance = new DirectoryState(Constants.CLIENT_PATH);

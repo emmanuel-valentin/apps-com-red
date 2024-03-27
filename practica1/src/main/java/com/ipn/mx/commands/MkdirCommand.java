@@ -12,12 +12,18 @@ import java.nio.file.Paths;
 @CommandLine.Command(name = "mkdir", description = "Crea un directorio")
 public class MkdirCommand implements Runnable {
     private String operationMessage = "";
+    private boolean remote;
 
     @CommandLine.Parameters(description = "Nombre del directorio a crear")
     private String path;
 
-    @CommandLine.Option(names = {"-r", "--remote"}, description = "Crea el directorio en el servidor")
-    private boolean remote = false;
+    public MkdirCommand(boolean remote) {
+        this.remote = remote;
+    }
+
+    public MkdirCommand() {
+        this.remote = false;
+    }
 
     public String getOperationMessage() {
         return this.operationMessage;
@@ -27,12 +33,8 @@ public class MkdirCommand implements Runnable {
     public void run() {
         try {
             Path folderCreated;
-            if (remote) {
-                folderCreated = Files.createDirectories(Paths.get(Constants.SERVER_PATH + "/" + path));
-            }
-            else {
-                folderCreated = Files.createDirectories(Paths.get(DirectoryState.getInstance().getPath() + "/" + path));
-            }
+            DirectoryState directoryState = DirectoryState.getInstance(remote);
+            folderCreated = Files.createDirectories(Paths.get(directoryState.getPath() + "/" + path));
             this.operationMessage = folderCreated.toAbsolutePath() + " creado exitosamente.";
         } catch (IOException e) {
             throw new RuntimeException(e);

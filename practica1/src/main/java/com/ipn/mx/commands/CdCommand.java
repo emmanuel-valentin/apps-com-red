@@ -10,12 +10,18 @@ import java.nio.file.Paths;
 @CommandLine.Command(name = "cd", description = "Cambia el directorio actual")
 public class CdCommand implements Runnable {
     private String newPath;
+    private boolean remote;
 
     @CommandLine.Parameters(description = "Directorio al que se desea cambiar", defaultValue = "")
     private String path;
 
-    @CommandLine.Option(names = {"-r", "--remote"}, description = "Cambia el directorio en el servidor")
-    private boolean remote = false;
+    public CdCommand(boolean remote) {
+        this.remote = remote;
+    }
+
+    public CdCommand() {
+        this.remote = false;
+    }
 
     public String getNewPath() {
         return newPath;
@@ -24,12 +30,8 @@ public class CdCommand implements Runnable {
     @Override
     public void run() {
         try {
-            String pathToChange = DirectoryState.getInstance().getPath();
-            if (remote) {
-                pathToChange = Constants.SERVER_PATH + "/" + path;
-            } else {
-                pathToChange += "/" + path;
-            }
+            String pathToChange = DirectoryState.getInstance(remote).getPath();
+            pathToChange += "/" + path;
 
             if (Files.exists(Paths.get(pathToChange))) {
                 DirectoryState.getInstance().setPath(pathToChange);

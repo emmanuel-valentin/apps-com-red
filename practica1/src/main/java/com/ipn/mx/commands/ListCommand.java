@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
+import java.rmi.Remote;
 
 @CommandLine.Command(name = "ls", description = "Lista los archivos y directorios del directorio actual")
 public class ListCommand implements Runnable {
@@ -16,8 +17,15 @@ public class ListCommand implements Runnable {
     @CommandLine.Parameters(description = "Directorio a listar", defaultValue = "")
     private String directory;
 
-    @CommandLine.Option(names = {"-r", "--remote"}, description = "Muestra los archivos y directorios del servidor")
-    private boolean remote = false;
+    private boolean remote;
+
+    public ListCommand(boolean remote) {
+        this.remote = remote;
+    }
+
+    public ListCommand() {
+        this.remote = false;
+    }
 
     public String getListed() {
         return listed;
@@ -26,7 +34,7 @@ public class ListCommand implements Runnable {
     @Override
     public void run() {
         try {
-            String path = remote ? Constants.SERVER_PATH : DirectoryState.getInstance().getPath();
+            String path = DirectoryState.getInstance(remote).getPath();
             if (!directory.isEmpty()) {
                 path += "/" + directory;
             }
