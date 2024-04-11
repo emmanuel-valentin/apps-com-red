@@ -219,5 +219,6 @@ public class Helpers {
 
         dos.writeUTF(name);
         dos.writeLong(fileSize);
+        zipFile.delete();
     }
 }
