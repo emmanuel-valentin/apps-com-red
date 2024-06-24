@@ -10,6 +10,7 @@ import java.net.SocketTimeoutException
 
 fun sendFile(file: File) {
     val clientSocket = DatagramSocket()
+    clientSocket.soTimeout = 5000
     val address = InetAddress.getByName(SOCKET_CONN.IP_ADDR)
 
     // Metadata from file
@@ -26,29 +27,36 @@ fun sendFile(file: File) {
     while (fileBytes.isNotEmpty()) {
         val fileChunk = fileBytes.take(SLIDING_WINDOW_CONF.PACKET_SIZE - 1023)
         try {
-            sendChunk(dos, fileName, fileSize, packetNumber, fileChunk, baos, address, clientSocket)
-            clientSocket.soTimeout = 5000
+            sendChunk(
+                dos,
+                fileName,
+                fileSize,
+                packetNumber,
+                fileChunk,
+                baos,
+                address,
+                clientSocket,
+                error = (0..4).random() == 2
+            )
 
-            val ACKData = ByteArray(Int.SIZE_BYTES)
-            val clientACKDatagram = DatagramPacket(ACKData, ACKData.size)
+            val ackData = ByteArray(Int.SIZE_BYTES)
+            val clientACKDatagram = DatagramPacket(ackData, ackData.size)
             clientSocket.receive(clientACKDatagram)
             val ackStream = DataInputStream(ByteArrayInputStream(clientACKDatagram.data))
             val confirmation = packetNumber == ackStream.readInt()
 
             if (!confirmation) {
                 println("Acuse no recibida, reenviando paquete $packetNumber")
-                sendChunk(dos, fileName, fileSize, packetNumber, fileChunk, baos, address, clientSocket)
+                // sendChunk(dos, fileName, fileSize, packetNumber, fileChunk, baos, address, clientSocket)
             }
             else {
                 println("Acuse recibida, paquete $packetNumber enviado correctamente")
                 fileBytes = fileBytes.drop(SLIDING_WINDOW_CONF.PACKET_SIZE - 1023)
                 packetNumber++
             }
-
-            baos.reset()
         } catch (e: SocketTimeoutException) {
             println("Acuse no recibida, reenviando paquete $packetNumber")
-            sendChunk(dos, fileName, fileSize, packetNumber, fileChunk, baos, address, clientSocket)
+            // sendChunk(dos, fileName, fileSize, packetNumber, fileChunk, baos, address, clientSocket)
         }
 
     }
@@ -62,7 +70,8 @@ private fun sendChunk(
     fileChunk: List<Byte>,
     baos: ByteArrayOutputStream,
     address: InetAddress?,
-    clientSocket: DatagramSocket
+    clientSocket: DatagramSocket,
+    error: Boolean = false
 ) {
     dos.writeInt(fileName.length)
     dos.write(fileName.toByteArray())
@@ -78,5 +87,10 @@ private fun sendChunk(
         address,
         SOCKET_CONN.PORT
     )
+    if (error) {
+        baos.reset()
+        return
+    }
     clientSocket.send(datagramPacket)
+    baos.reset()
 }

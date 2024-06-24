@@ -49,18 +49,21 @@ fun receiveFile() {
         fos = fos ?: FileOutputStream(File("${DIRECTORY.SERVER_DIR}/$fileName"))
         fos.write(fileBytes)
 
-        sendACK(serverSocket, packetNumber, packet.address, packet.port)
+        val receivedFile = File("${DIRECTORY.SERVER_DIR}/$fileName")
+        if (receivedFile.length() == fileSize.toLong()) {
+            println("Archivo recibido correctamente")
+            fos.close()
+            fos = null
+        }
+
+        sendAck(serverSocket, packetNumber, packet.address, packet.port)
     }
 }
 
-private fun sendACK(socket: DatagramSocket, packetNumber: Int, addr: InetAddress, port: Int) {
+private fun sendAck(socket: DatagramSocket, packetNumber: Int, addr: InetAddress, port: Int) {
     val baos = ByteArrayOutputStream()
-
-
     val dos = DataOutputStream(baos)
-
     dos.writeInt(packetNumber)
-
     val packet = baos.toByteArray()
     val datagramPacket = DatagramPacket(packet, packet.size, addr, port)
     socket.send(datagramPacket)
